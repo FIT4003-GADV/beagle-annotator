@@ -1,0 +1,78 @@
+area:
+parallel_coordinates: 1
+stream_graph: 1
+
+bar:
+waffle: 1
+treemap: 1
+
+box:
+scatter: 2
+
+bubble:
+line: 1
+scatter: 1
+
+chord:
+heat_map: 1
+
+donut:
+chord: 2
+
+geographic_map:
+word_cloud: 1
+voronoi: 2
+
+graph:
+donut: 1
+hexabin: 1
+line: 1
+scatter: 3
+
+heat_map:
+bar: 1
+hexabin: 1
+
+hexabin:
+voronoi: 1
+
+line:
+scatter: 1
+voronoi: 1
+
+parallel_coordinates:
+chord: 1
+
+radial:
+line: 1
+
+sankey:
+heat_map: 1
+graph: 1
+
+scatter:
+pie: 1
+heat_map: 1
+box: 3
+
+stream_graph:
+area: 1
+word_cloud: 1
+
+sunburst:
+word_cloud: 1
+donut: 1
+
+treemap:
+bar: 2
+
+voronoi:
+hexabin: 1
+graph: 1
+word_cloud: 1
+
+waffle:
+treemap: 1
+heat_map: 1
+word_cloud: 2
+
