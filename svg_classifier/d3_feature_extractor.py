@@ -1,3 +1,5 @@
+import sys
+
 from bs4 import BeautifulSoup
 
 from axes import *
@@ -7,11 +9,6 @@ from extract_path_features import *
 from extract_rect_features import *
 from extract_text_features import *
 from utility import *
-
-
-import re
-import random
-import sys
 
 
 # Extracts features from svg file, populates the feature dictionary

@@ -1,21 +1,19 @@
+import argparse
+import json
 import os
-import sys
-from sklearn.preprocessing import StandardScaler
-from sklearn.feature_extraction import DictVectorizer
-from d3_feature_extractor import extract
-from sklearn import tree
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.externals import joblib
-import numpy as np
 import random
 import time
-import json
 import traceback
-import argparse
-from PIL import Image
-from utility import reverse_dict
 
+import numpy as np
+from PIL import Image
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+
+from d3_feature_extractor import extract
+from utility import reverse_dict
 
 # mapping of integers to the chart type they represent
 symbol_dict = {
@@ -29,7 +27,7 @@ num_dict = reverse_dict(symbol_dict)
 
 text_features = [
     "text_word_count", "text_max_font_size", "text_min_font_size", "text_var_font_size",
-    "text_unique_font_size_count", "text_unique_x_count","text_unique_y_count"
+    "text_unique_font_size_count", "text_unique_x_count", "text_unique_y_count"
 ]
 
 
@@ -42,9 +40,9 @@ class BeagleClassifier(object):
 
     def __init__(self, args, training=None):
         # set presets
-        self.num_charts = 10 # number of charts to sample per vis type
-        self.max_charts = 400 # maximum number of charts to include per vis type
-        self.runs = 1 # number of times to repeat the experiment
+        self.num_charts = 10  # number of charts to sample per vis type
+        self.max_charts = 400  # maximum number of charts to include per vis type
+        self.runs = 1  # number of times to repeat the experiment
         self.use_text = True
 
         # set paths for files
@@ -61,7 +59,7 @@ class BeagleClassifier(object):
             self.runs = int(args[1])  # number of times to repeat the experiment
 
         if len(args) > 2:
-            self.num_charts = int(args[2]) # number of charts to sample per vis type
+            self.num_charts = int(args[2])  # number of charts to sample per vis type
 
         if len(args) > 3:
             self.use_text = args[3].lower() == "true"
@@ -110,8 +108,8 @@ class BeagleClassifier(object):
         data_path = os.path.join(self.base_path, collection, "charts")
         urls_file_path = os.path.join(self.base_path, collection, "urls.txt")
         images_path = os.path.join(self.base_path, collection, "images")
-        output_file = os.path.join(data_path,"features.txt")
-        badfile = os.path.join(data_path,"bad.txt")
+        output_file = os.path.join(data_path, "features.txt")
+        badfile = os.path.join(data_path, "bad.txt")
 
         if os.path.isfile(badfile):
             with open(badfile) as f:
@@ -123,7 +121,7 @@ class BeagleClassifier(object):
             chartsubname = flags[0]
             if chart in badCharts:
                 continue
-            if not os.path.exists(os.path.join(data_path,chartsubname,"svg.txt")):
+            if not os.path.exists(os.path.join(data_path, chartsubname, "svg.txt")):
                 badCharts[chart] = True
                 continue
             multiple_labels = flags[2].split(",")
@@ -137,16 +135,16 @@ class BeagleClassifier(object):
                 print("bad label", multiple_labels[0])
                 continue
             # ignore charts with bad images
-            if label not in symbol_dict: # ignore unsupported chart types
+            if label not in symbol_dict:  # ignore unsupported chart types
                 badCharts[chart] = True
                 continue
             if "i" in flags:
                 badCharts[chart] = True
                 continue
-            if not self.test_image(os.path.join(images_path,chartsubname+".png")):
-              badCharts[chart] = True
-              continue
-            feature_dict = extract(os.path.join(data_path,chartsubname,"svg.txt"))
+            if not self.test_image(os.path.join(images_path, chartsubname + ".png")):
+                badCharts[chart] = True
+                continue
+            feature_dict = extract(os.path.join(data_path, chartsubname, "svg.txt"))
             if isinstance(feature_dict, str):
                 print("wrong output")
                 badCharts[chart] = True
@@ -154,7 +152,7 @@ class BeagleClassifier(object):
             features[chart] = feature_dict
         output_json = open(output_file, 'w')
         json.dump(features, output_json)
-        with open(badfile,'w') as f:
+        with open(badfile, 'w') as f:
             json.dump(badCharts, f)
         output_json.close()
         return features
@@ -168,7 +166,7 @@ class BeagleClassifier(object):
             return True
         except:
             pass
-        return False # didn't work
+        return False  # didn't work
 
     def organize_samples(self, collection, types_lists, secondary_labels):
         """
@@ -225,8 +223,9 @@ class BeagleClassifier(object):
         """
         features = self.features if not training else self.train_features
 
-        print("\tselecting sample subsets ("+str(self.num_charts)+" samples per chart type) and extracting features...")
-        for label in types_lists: # for each valid vis type
+        print("\tselecting sample subsets (" + str(
+            self.num_charts) + " samples per chart type) and extracting features...")
+        for label in types_lists:  # for each valid vis type
             chosenSamples = types_lists[label]
 
             if repeat:
@@ -246,7 +245,7 @@ class BeagleClassifier(object):
                 if len(chosenSamples) > self.max_charts:
                     chosenSamples = random.sample(types_lists[label], self.max_charts)
 
-            print("\t\textracting features for label "+str(label)+" ("+symbol_dict[label]+")...")
+            print("\t\textracting features for label " + str(label) + " (" + symbol_dict[label] + ")...")
             for chart, url in chosenSamples:
                 try:
                     if chart in features:
@@ -303,7 +302,7 @@ class BeagleClassifier(object):
                     if label not in list(d.keys()):
                         d[label] = 0
                 total_count[label] += 1
-                prediction = clf.predict(np.array(testing_points[i]).reshape(1,-1))[0]
+                prediction = clf.predict(np.array(testing_points[i]).reshape(1, -1))[0]
                 if prediction == label:
                     correct_count[label] += 1
                 else:
@@ -327,10 +326,9 @@ class BeagleClassifier(object):
                             "real": symbol_dict[label]
                         })
 
-        for k in total_count: # for each label
-            result[symbol_dict[k]] = 1.0*correct_count[k]/total_count[k]
-        return {"accuracy":result,"wrong":wrong,"correct":correct_count,"total":total_count}
-
+        for k in total_count:  # for each label
+            result[symbol_dict[k]] = 1.0 * correct_count[k] / total_count[k]
+        return {"accuracy": result, "wrong": wrong, "correct": correct_count, "total": total_count}
 
     def do_cross_validation_trained(self, feature_dicts, labels, secondary_labels, urls, clft):
         """
@@ -367,7 +365,7 @@ class BeagleClassifier(object):
                     if label not in list(d.keys()):
                         d[label] = 0
                 total_count[label] += 1
-                prediction = clft.predict(np.array(t[i]).reshape(1,-1))[0]
+                prediction = clft.predict(np.array(t[i]).reshape(1, -1))[0]
                 if prediction == label:
                     correct_count[label] += 1
                 else:
@@ -391,9 +389,9 @@ class BeagleClassifier(object):
                             "real": symbol_dict[label]
                         })
 
-        for k in total_count: # for each label
-            result[symbol_dict[k]] = 1.0*correct_count[k]/total_count[k]
-        return {"accuracy":result,"wrong":wrong,"correct":correct_count,"total":total_count}
+        for k in total_count:  # for each label
+            result[symbol_dict[k]] = 1.0 * correct_count[k] / total_count[k]
+        return {"accuracy": result, "wrong": wrong, "correct": correct_count, "total": total_count}
 
     def consolidate_accuracy_results_across_runs(self, run_results):
         """
@@ -404,7 +402,7 @@ class BeagleClassifier(object):
         final_accuracy_per_label = {}
         final_wrong = {}
         for run_result in run_results:
-            accuracy = run_result['accuracy'] # TODO clean up using tuple probably
+            accuracy = run_result['accuracy']  # TODO clean up using tuple probably
             wrong = run_result['wrong']
             correct_count = run_result['correct']
             total_count = run_result['total']
@@ -412,7 +410,7 @@ class BeagleClassifier(object):
                 if label not in final_accuracy_per_label:
                     final_accuracy_per_label[label] = []
                 final_accuracy_per_label[label].append(accuracy[label])
-            print(correct_count,total_count)
+            print(correct_count, total_count)
             for label in correct_count:
                 final_correct += correct_count[label]
             for label in total_count:
@@ -424,12 +422,12 @@ class BeagleClassifier(object):
         print("average accuracy across all runs:")
         avg_accuracy = []
         with open("accuracy.txt", "w") as myfile:
-            myfile.write("\t".join(['label','accuracy'])+"\n")
+            myfile.write("\t".join(['label', 'accuracy']) + "\n")
             for label in sorted(final_accuracy_per_label):
                 final_average = np.mean(final_accuracy_per_label[label])
-                print(label+"\t"+str(final_average)+"\t",final_accuracy_per_label[label])
+                print(label + "\t" + str(final_average) + "\t", final_accuracy_per_label[label])
                 avg_accuracy.append(final_average)
-                myfile.write("\t".join([label,str(final_average)])+"\n")
+                myfile.write("\t".join([label, str(final_average)]) + "\n")
         print("average:")
         print(np.mean(np.array(avg_accuracy)))
 
@@ -437,10 +435,11 @@ class BeagleClassifier(object):
         print(1.0 * final_correct / final_total)
 
         with open("wrong.txt", "w") as myfile:
-            myfile.write("\t".join(['visid','real','predicted','url','feature_dict'])+"\n")
+            myfile.write("\t".join(['visid', 'real', 'predicted', 'url', 'feature_dict']) + "\n")
             for label in sorted(final_wrong):
                 for w in final_wrong[label]:
-                    myfile.write("\t".join([w['url'][0],w['real'],w['predicted'],w['url'][1],json.dumps(w['feature_dict'])])+"\n")
+                    myfile.write("\t".join(
+                        [w['url'][0], w['real'], w['predicted'], w['url'][1], json.dumps(w['feature_dict'])]) + "\n")
         wrong_counts = {}
         for label in sorted(final_wrong):
             for w in final_wrong[label]:
@@ -452,7 +451,7 @@ class BeagleClassifier(object):
                     else:
                         wrong_counts[real][predicted] = 1
                 else:
-                    wrong_counts[real] = { predicted:1 }
+                    wrong_counts[real] = {predicted: 1}
         wrong_counts_file = open("wrong_counts.txt", 'w')
         for chart in list(wrong_counts.keys()):
             wrong_counts_file.write(chart + ":\n")
@@ -488,9 +487,9 @@ class BeagleClassifier(object):
         total_time = []
         accuracy = []
         s = time.time()
-        self.load_features() # build the feature dicts, if they don't exist yet
+        self.load_features()  # build the feature dicts, if they don't exist yet
         for collection in self.collection:
-            self.organize_samples(collection, types_lists, secondary_labels) # only call once
+            self.organize_samples(collection, types_lists, secondary_labels)  # only call once
         # print secondary_labels
 
         if self.training:
@@ -514,7 +513,6 @@ class BeagleClassifier(object):
             t_feature_dicts, t_labels, t_urls = [], [], []
             self.select_subsets(t_feature_dicts, t_labels, t_urls, train_types_lists, repeat=False, training=True)
 
-
             t_feature_dicts, t_labels, t_urls = [], [], []
             self.select_subsets(t_feature_dicts, t_labels, t_urls, train_types_lists, repeat=False, training=True)
 
@@ -526,11 +524,11 @@ class BeagleClassifier(object):
             clft.fit(features_arrayt, t_labels)
 
             total_time.append(time.time() - s)
-            print("running experiment "+str(self.runs)+" time(s)...")
+            print("running experiment " + str(self.runs) + " time(s)...")
 
             # train on training set + test on test set
             for run_index in range(self.runs):
-                print("executing run "+str(run_index)+"...")
+                print("executing run " + str(run_index) + "...")
                 feature_dicts, labels, urls = [], [], []
                 s = time.time()
 
@@ -543,22 +541,22 @@ class BeagleClassifier(object):
                 accuracy.append(result_dict)
         else:
             total_time.append(time.time() - s)
-            print("running experiment "+str(self.runs)+" time(s)...")
+            print("running experiment " + str(self.runs) + " time(s)...")
 
             for run_index in range(self.runs):
-                print("executing run "+str(run_index)+"...")
+                print("executing run " + str(run_index) + "...")
                 feature_dicts, labels, urls = [], [], []
 
                 s = time.time()
                 if self.num_charts == -1:
                     self.select_subsets(feature_dicts, labels, urls, types_lists, repeat=False)
                 else:
-                    self.select_subsets(feature_dicts,labels,urls,types_lists)
+                    self.select_subsets(feature_dicts, labels, urls, types_lists)
                 total_time.append(time.time() - s)
-                result_dict = self.do_cross_validation(feature_dicts,labels,secondary_labels,urls)
+                result_dict = self.do_cross_validation(feature_dicts, labels, secondary_labels, urls)
                 accuracy.append(result_dict)
 
-        print("average extraction time:",np.sum(total_time)/self.runs)
+        print("average extraction time:", np.sum(total_time) / self.runs)
         self.consolidate_accuracy_results_across_runs(accuracy)
         self.print_chart_stats(types_lists)
 

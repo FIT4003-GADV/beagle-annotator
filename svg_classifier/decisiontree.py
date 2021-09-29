@@ -78,13 +78,13 @@ trained = sysargs.t
 Paths that are specific to data that exists in modis already
 '''
 collection = args[0]
-data_path = "../data/%s/charts/" % collection
-urls_file_path = "../data/%s/urls.txt" % collection
+data_path = "%s/charts/" % collection
+urls_file_path = "%s/urls.txt" % collection
 output_file = os.path.join(data_path, "features.txt")
 # for automatically ignoring bad charts
 badfile = os.path.join(data_path, "bad.txt")
-images_path = "../data/%s/images/" % collection
-svg_path = "../data/%s/charts/" % collection
+images_path = "%s/images/" % collection
+svg_path = "%s/charts/" % collection
 
 if len(args) > 1:
     RUNS = int(args[1])  # number of times to repeat the experiment

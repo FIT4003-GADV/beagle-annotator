@@ -1,7 +1,7 @@
-from utility import *
 import numpy as np
-import re
-import sys
+
+from utility import *
+
 
 def extract_text_features(texts, feature_dict, svg_width, svg_height):
     fill_colors = set([])
@@ -35,12 +35,12 @@ def extract_text_features(texts, feature_dict, svg_width, svg_height):
         return (feature_dict, word_count)
     if len(font_size_list) > 0:
         font_size_array = np.array(font_size_list)
-        max_font_size = 1.0*np.max(font_size_array)
+        max_font_size = 1.0 * np.max(font_size_array)
         feature_dict["text_max_font_size"] = 1.0
-        feature_dict["text_min_font_size"] = np.min(font_size_array)/max_font_size
-        feature_dict["text_var_font_size"] = np.var(font_size_array)/max_font_size**2
-        feature_dict["text_unique_font_size_count"] = 1.0*len(set(font_size_list))/word_count
-        feature_dict["text_unique_x_count"] = 1.0*len(x_set)/word_count
-        feature_dict["text_unique_y_count"] = 1.0*len(y_set)/word_count
-    feature_dict["text_unique_fill_count"] = 1.0*len(fill_colors)/word_count
+        feature_dict["text_min_font_size"] = np.min(font_size_array) / max_font_size
+        feature_dict["text_var_font_size"] = np.var(font_size_array) / max_font_size ** 2
+        feature_dict["text_unique_font_size_count"] = 1.0 * len(set(font_size_list)) / word_count
+        feature_dict["text_unique_x_count"] = 1.0 * len(x_set) / word_count
+        feature_dict["text_unique_y_count"] = 1.0 * len(y_set) / word_count
+    feature_dict["text_unique_fill_count"] = 1.0 * len(fill_colors) / word_count
     return (feature_dict, word_count)
