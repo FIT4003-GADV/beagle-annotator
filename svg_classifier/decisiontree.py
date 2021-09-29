@@ -1,19 +1,18 @@
+import argparse
+import json
 import os
-import numpy as np
 import random
 import time
-import json
 import traceback
-import argparse
-import joblib
-import pickle
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.feature_extraction import DictVectorizer
-from sklearn import tree
-from sklearn.model_selection import StratifiedKFold
-from sklearn.ensemble import RandomForestClassifier
+import joblib
+import numpy as np
 from PIL import Image
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+
 from d3_feature_extractor import extract
 
 '''
@@ -81,9 +80,9 @@ Paths that are specific to data that exists in modis already
 collection = args[0]
 data_path = "../data/%s/charts/" % collection
 urls_file_path = "../data/%s/urls.txt" % collection
-output_file = os.path.join(data_path,"features.txt")
+output_file = os.path.join(data_path, "features.txt")
 # for automatically ignoring bad charts
-badfile = os.path.join(data_path,"bad.txt")
+badfile = os.path.join(data_path, "bad.txt")
 images_path = "../data/%s/images/" % collection
 svg_path = "../data/%s/charts/" % collection
 
@@ -91,28 +90,29 @@ if len(args) > 1:
     RUNS = int(args[1])  # number of times to repeat the experiment
 
 if len(args) > 2:
-    NUM_CHARTS = int(args[2]) # number of charts to sample per vis type
+    NUM_CHARTS = int(args[2])  # number of charts to sample per vis type
 
 if len(args) > 3:
-  USE_TEXT = args[3].lower() == "true"
-  print("using text? ", USE_TEXT)
+    USE_TEXT = args[3].lower() == "true"
+    print("using text? ", USE_TEXT)
 
 
 def load_features():
-  global features
-  if not os.path.isfile(output_file):
-    print("creating features from scratch")
-    create_and_save_features()
-  else:
-    print("loading features file")
-    print(output_file)
-    # file = open(output_file, 'rb')
-    # features = pickle.load(file)
-    with open(output_file, 'r') as f:
-        # features = pickle.load(output_file)
-      # data = f.read()
-      # f = f.decode('utf-8').replace('\0', '')
-      features = json.load(f)
+    global features
+    if not os.path.isfile(output_file):
+        print("creating features from scratch")
+        create_and_save_features()
+    else:
+        print("loading features file")
+        print(output_file)
+        # file = open(output_file, 'rb')
+        # features = pickle.load(file)
+        with open(output_file, 'r') as f:
+            # features = pickle.load(output_file)
+            # data = f.read()
+            # f = f.decode('utf-8').replace('\0', '')
+            features = json.load(f)
+
 
 def create_and_save_features():
     global features
@@ -120,8 +120,8 @@ def create_and_save_features():
     features = {}
     badCharts = {}
     if os.path.isfile(badfile):
-      with open(badfile) as f:
-        badCharts = json.load(f)
+        with open(badfile) as f:
+            badCharts = json.load(f)
     urls_file = open(urls_file_path, 'r')
     counter = 0
     for line in urls_file:
@@ -135,16 +135,16 @@ def create_and_save_features():
         multiple_labels = flags[2].split(",")
         label = int(multiple_labels[0])
         # ignore charts with bad images
-        if label not in symbol_dict: # ignore unsupported chart types
+        if label not in symbol_dict:  # ignore unsupported chart types
             badCharts[chart] = True
             continue
         if "i" in flags:
             badCharts[chart] = True
             continue
-        if not testImage(os.path.join(images_path, chart+".png")):
-          badCharts[chart] = True
-          continue
-        feature_dict = extract(os.path.join(svg_path,chart, "svg.txt"))
+        if not testImage(os.path.join(images_path, chart + ".png")):
+            badCharts[chart] = True
+            continue
+        feature_dict = extract(os.path.join(svg_path, chart, "svg.txt"))
         print("Features created for chart ID-%s, n features = %d" % (chart, len(feature_dict)))
         if isinstance(feature_dict, str):
             print("wrong output")
@@ -157,8 +157,9 @@ def create_and_save_features():
     output_json = open(output_file, 'w')
     json.dump(features, output_json)
     with open(badfile, 'w') as f:
-      json.dump(badCharts, f)
+        json.dump(badCharts, f)
     output_json.close()
+
 
 # used to see if we have a valid image
 def testImage(imagepath):
@@ -167,7 +168,8 @@ def testImage(imagepath):
         return True
     except:
         pass
-        return False # didn't work
+        return False  # didn't work
+
 
 # goes over all samples and filters for only valid vis types
 # each vis type has a list of (chart,url) pairs
@@ -180,23 +182,24 @@ def organize_samples(types_lists, secondary_labels):
         line_list = line.rstrip("\n").rstrip("\r").split(" ")
         chart = line_list[0]
         if chart not in features:
-          continue
+            continue
         secondary_label = None
         url = line_list[1]
         multiple_labels = line_list[2].split(",")
         label = int(multiple_labels[0])
         if label not in symbol_dict:
-          continue
+            continue
         if len(multiple_labels) > 1:
             secondary_label = multiple_labels[1:]
         types_lists[label].append((chart, url))
         if secondary_label is not None:
             secondary_labels[chart] = secondary_label
 
+
 # select subsets from each vis type, and extract feature for these types
 # call this function for each new run
-def select_subsets(feature_dicts, labels,urls, types_lists):
-    print("\tselecting sample subsets ("+str(NUM_CHARTS)+" samples per chart type) and extracting features...")
+def select_subsets(feature_dicts, labels, urls, types_lists):
+    print("\tselecting sample subsets (" + str(NUM_CHARTS) + " samples per chart type) and extracting features...")
     for label in types_lists:  # for each valid vis type
         if len(types_lists[label]) == 0:
             continue
@@ -208,7 +211,7 @@ def select_subsets(feature_dicts, labels,urls, types_lists):
                 chosenSamples.append(types_lists[label][i])
         else:  # enough samples
             chosenSamples = random.sample(types_lists[label], NUM_CHARTS)
-        print("\t\textracting features for label "+str(label)+" ("+symbol_dict[label]+")...")
+        print("\t\textracting features for label " + str(label) + " (" + symbol_dict[label] + ")...")
         for chart, url in chosenSamples:
             try:
                 if chart in features:
@@ -219,9 +222,9 @@ def select_subsets(feature_dicts, labels,urls, types_lists):
                 if isinstance(feature_dict, str):
                     continue
                 if not USE_TEXT:
-                  for k in text_features:
-                    if k in feature_dict:
-                      feature_dict.pop(k)
+                    for k in text_features:
+                        if k in feature_dict:
+                            feature_dict.pop(k)
                 feature_dicts.append(feature_dict)
                 labels.append(label)
                 urls.append((chart, url))
@@ -230,14 +233,15 @@ def select_subsets(feature_dicts, labels,urls, types_lists):
                 traceback.print_exc()
                 pass
 
+
 # limits number of charts included to at most 400 per label
 def select_subsets_no_repeats(feature_dicts, labels, urls, types_lists):
     print("\tselecting all samples and extracting features...")
     for label in list(types_lists.keys()):  # for each valid vis type
-        print("\t\textracting features for label "+str(label)+" ("+symbol_dict[label]+")...")
+        print("\t\textracting features for label " + str(label) + " (" + symbol_dict[label] + ")...")
         chosenSamples = types_lists[label]
         if len(chosenSamples) > MAX_CHARTS:
-          chosenSamples = random.sample(types_lists[label], MAX_CHARTS)
+            chosenSamples = random.sample(types_lists[label], MAX_CHARTS)
         for chart, url in chosenSamples:
             try:
                 if chart in features:
@@ -245,9 +249,9 @@ def select_subsets_no_repeats(feature_dicts, labels, urls, types_lists):
                 if isinstance(feature_dict, str):
                     continue
                 if not USE_TEXT:
-                  for k in text_features:
-                    if k in feature_dict:
-                      feature_dict.pop(k)
+                    for k in text_features:
+                        if k in feature_dict:
+                            feature_dict.pop(k)
                 feature_dicts.append(feature_dict)
                 labels.append(label)
                 urls.append((chart, url))
@@ -255,7 +259,6 @@ def select_subsets_no_repeats(feature_dicts, labels, urls, types_lists):
                 print(e)
                 traceback.print_exc()
                 pass
-
 
 
 # performs the cross validation for the chosen samples
@@ -270,8 +273,8 @@ def cross_validation(feature_dicts, labels, secondary_labels, urls):
     features_array = scaler.fit_transform(vec.fit_transform(feature_dicts))
     clf = RandomForestClassifier(n_estimators=14)
 
-    #Save trained Beagle model on all available data, prior to cross validation
-    train_save_beagle_model(features_array,labels, clf, vec, scaler)
+    # Save trained Beagle model on all available data, prior to cross validation
+    train_save_beagle_model(features_array, labels, clf, vec, scaler)
 
     correct_count = {}
     total_count = {}
@@ -290,7 +293,7 @@ def cross_validation(feature_dicts, labels, secondary_labels, urls):
                 if label not in list(d.keys()):
                     d[label] = 0
             total_count[label] += 1
-            prediction = clf.predict(np.array(testing_points[i]).reshape(1,-1))[0]
+            prediction = clf.predict(np.array(testing_points[i]).reshape(1, -1))[0]
             if prediction == label:
                 correct_count[label] += 1
             else:
@@ -308,18 +311,18 @@ def cross_validation(feature_dicts, labels, secondary_labels, urls):
                     if real_label not in wrong:
                         wrong[real_label] = []
                     wrong[real_label].append({
-                        'feature_dict':feature_dicts[test_index[i]],
-                        'url':urls[test_index[i]],
-                        "predicted":symbol_dict[np.asscalar(prediction)],
-                        "real":symbol_dict[label]
+                        'feature_dict': feature_dicts[test_index[i]],
+                        'url': urls[test_index[i]],
+                        "predicted": symbol_dict[np.asscalar(prediction)],
+                        "real": symbol_dict[label]
                     })
-
 
     save_model(clf, "model_cv_d3.pkl")
 
-    for k in total_count: # for each label
-        result[symbol_dict[k]] = 1.0*correct_count[k]/total_count[k]
-    return {"accuracy":result,"wrong":wrong,"correct":correct_count,"total":total_count}
+    for k in total_count:  # for each label
+        result[symbol_dict[k]] = 1.0 * correct_count[k] / total_count[k]
+    return {"accuracy": result, "wrong": wrong, "correct": correct_count, "total": total_count}
+
 
 def accuracy_across_runs(runResults):
     final_correct = 0
@@ -347,12 +350,12 @@ def accuracy_across_runs(runResults):
     print("average accuracy across all RUNS:")
     avg_accuracy = []
     with open("accuracy.txt", "w") as myfile:
-        myfile.write("\t".join(['label', 'accuracy'])+"\n")
+        myfile.write("\t".join(['label', 'accuracy']) + "\n")
         for label in sorted(final_accuracy_per_label):
             final_average = np.mean(final_accuracy_per_label[label])
-            print(label+"\t"+str(final_average)+"\t", final_accuracy_per_label[label])
+            print(label + "\t" + str(final_average) + "\t", final_accuracy_per_label[label])
             avg_accuracy.append(final_average)
-            myfile.write("\t".join([label,str(final_average)])+"\n")
+            myfile.write("\t".join([label, str(final_average)]) + "\n")
     print("average:")
     print(np.mean(np.array(avg_accuracy)))
 
@@ -360,10 +363,11 @@ def accuracy_across_runs(runResults):
     print(1.0 * final_correct / final_total)
 
     with open("wrong.txt", "w") as myfile:
-        myfile.write("\t".join(['visid', 'real', 'predicted', 'url', 'feature_dict'])+"\n")
+        myfile.write("\t".join(['visid', 'real', 'predicted', 'url', 'feature_dict']) + "\n")
         for label in sorted(final_wrong):
             for w in final_wrong[label]:
-                myfile.write("\t".join([w['url'][0],w['real'], w['predicted'], w['url'][1], json.dumps(w['feature_dict'])])+"\n")
+                myfile.write("\t".join(
+                    [w['url'][0], w['real'], w['predicted'], w['url'][1], json.dumps(w['feature_dict'])]) + "\n")
     wrong_counts = {}
     for label in sorted(final_wrong):
         for w in final_wrong[label]:
@@ -375,7 +379,7 @@ def accuracy_across_runs(runResults):
                 else:
                     wrong_counts[real][predicted] = 1
             else:
-                wrong_counts[real] = { predicted:1 }
+                wrong_counts[real] = {predicted: 1}
     wrong_counts_file = open("wrong_counts.txt", 'w')
     for chart in list(wrong_counts.keys()):
         wrong_counts_file.write(chart + ":\n")
@@ -385,13 +389,15 @@ def accuracy_across_runs(runResults):
         wrong_counts_file.write("\n")
     wrong_counts_file.close()
 
+
 # used to tell us how many valid charts there are for each chart type
 def print_chart_stats(types_lists):
-  print("chart stats:")
-  outp = {}
-  for l in types_lists:
-    outp[symbol_dict[l]] = len(types_lists[l])
-  print(outp)
+    print("chart stats:")
+    outp = {}
+    for l in types_lists:
+        outp[symbol_dict[l]] = len(types_lists[l])
+    print(outp)
+
 
 def save_model(clf, filename):
     """
@@ -401,14 +407,17 @@ def save_model(clf, filename):
     """
     joblib.dump(clf, filename)
 
-def train_save_beagle_model(features_array,labels, clf, vec, scaler):
+
+def train_save_beagle_model(features_array, labels, clf, vec, scaler):
     clf.fit(features_array, labels)
     save_model(clf, "model_d3.pkl")
     save_object(vec, "vectorizer_d3.pkl")
     save_object(scaler, "scaler_d3.pkl")
 
+
 def save_object(obj, filename):
     joblib.dump(obj, filename)
+
 
 def reload_model(filename):
     """
@@ -422,7 +431,7 @@ def main():
     # valid vis types only
     types_lists = {}
     for k in symbol_dict:
-      types_lists[k] = []
+        types_lists[k] = []
 
     # if vis sample has more than one label, put the second label in here
     secondary_labels = {}
@@ -431,17 +440,17 @@ def main():
     accuracy = []
 
     s = time.time()
-    load_features() # build the feature dicts, if they don't exist yet
+    load_features()  # build the feature dicts, if they don't exist yet
     organize_samples(types_lists, secondary_labels)  # only call once
     print(secondary_labels)
     total_time.append(time.time() - s)
-    print("running experiment "+str(RUNS)+" time(s)...")
+    print("running experiment " + str(RUNS) + " time(s)...")
     zero_features = []
     for run_index in range(RUNS):
-        print("executing run "+str(run_index)+"...")
+        print("executing run " + str(run_index) + "...")
         feature_dicts = []
         labels = []
-        urls =  []
+        urls = []
         s = time.time()
         if NUM_CHARTS == -1:
             select_subsets_no_repeats(feature_dicts, labels, urls, types_lists)
@@ -450,9 +459,10 @@ def main():
         total_time.append(time.time() - s)
         result_dict = cross_validation(feature_dicts, labels, secondary_labels, urls)
         accuracy.append(result_dict)
-    print("average extraction time:", np.sum(total_time)/RUNS)
+    print("average extraction time:", np.sum(total_time) / RUNS)
     accuracy_across_runs(accuracy)
     print_chart_stats(types_lists)
+
 
 if __name__ == "__main__":
     main()

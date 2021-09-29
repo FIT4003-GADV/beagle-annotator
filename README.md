@@ -6,7 +6,7 @@ The annotator code from the Beagle project: http://www.cs.umd.edu/~leilani/stati
 The decision tree classifier performs stratified 5-fold cross validation on the
 dataset and prints the accuracy per chart type (per run and averaged over all runs) and the overall accuracy.
 
-Installation requirements: numpy, scikit-learn
+Installation requirements: simply run `pip install -r requirements.txt`
 
 **Instructions to run:**
 
