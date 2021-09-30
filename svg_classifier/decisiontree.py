@@ -155,7 +155,7 @@ def create_and_save_features():
                 label = -1 if multiple_labels[0] == 'other' else int(inv_symbol_dict[multiple_labels[0]])
             else:
                 label = int(multiple_labels[0])
-        except KeyError:
+        except KeyError:  # TODO: condense and optimize this logic
             badCharts[chart] = True
             continue
         # ignore charts with bad images
@@ -210,7 +210,13 @@ def organize_samples(types_lists, secondary_labels):
         secondary_label = None
         url = line_list[1]
         multiple_labels = line_list[2].split(",")
-        label = int(multiple_labels[0])
+        try:
+            if not multiple_labels[0].lstrip('-').isdigit():
+                label = -1 if multiple_labels[0] == 'other' else int(inv_symbol_dict[multiple_labels[0]])
+            else:
+                label = int(multiple_labels[0])
+        except KeyError:  # TODO: condense logic
+            label = -1
         if label not in symbol_dict:
             continue
         if len(multiple_labels) > 1:
