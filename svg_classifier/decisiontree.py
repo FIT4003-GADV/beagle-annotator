@@ -50,6 +50,9 @@ symbol_dict = {
     29: "pie"
 }
 
+# Some labels in the dataset use the name instead of the integer value (e.g. "scatter" instead of 2)
+inv_symbol_dict = {v: k for k, v in symbol_dict.items()}
+
 text_features = [
     "text_word_count",
     "text_max_font_size",
@@ -97,6 +100,19 @@ if len(args) > 3:
     print("using text? ", USE_TEXT)
 
 
+# Convert numpy data types to primitive Python types, used in json.dumps()
+# See: https://stackoverflow.com/a/57915246/15507541
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
 def load_features():
     global features
     if not os.path.isfile(output_file):
@@ -133,7 +149,11 @@ def create_and_save_features():
             badCharts[chart] = True
             continue
         multiple_labels = flags[2].split(",")
-        label = int(multiple_labels[0])
+        # Some dataset labels use the string value instead of integer, handle those cases by converting back
+        if not multiple_labels[0].lstrip('-').isdigit():
+            label = int(inv_symbol_dict[multiple_labels[0]])
+        else:
+            label = int(multiple_labels[0])
         # ignore charts with bad images
         if label not in symbol_dict:  # ignore unsupported chart types
             badCharts[chart] = True
@@ -155,7 +175,7 @@ def create_and_save_features():
         counter += 1
     print(features)
     output_json = open(output_file, 'w')
-    json.dump(features, output_json)
+    json.dump(features, output_json, cls=NpEncoder)
     with open(badfile, 'w') as f:
         json.dump(badCharts, f)
     output_json.close()
@@ -367,7 +387,8 @@ def accuracy_across_runs(runResults):
         for label in sorted(final_wrong):
             for w in final_wrong[label]:
                 myfile.write("\t".join(
-                    [w['url'][0], w['real'], w['predicted'], w['url'][1], json.dumps(w['feature_dict'])]) + "\n")
+                    [w['url'][0], w['real'], w['predicted'], w['url'][1],
+                     json.dumps(w['feature_dict'], cls=NpEncoder)]) + "\n")
     wrong_counts = {}
     for label in sorted(final_wrong):
         for w in final_wrong[label]:
