@@ -150,10 +150,14 @@ def create_and_save_features():
             continue
         multiple_labels = flags[2].split(",")
         # Some dataset labels use the string value instead of integer, handle those cases by converting back
-        if not multiple_labels[0].lstrip('-').isdigit():
-            label = -1 if multiple_labels[0] == 'other' else int(inv_symbol_dict[multiple_labels[0]])
-        else:
-            label = int(multiple_labels[0])
+        try:
+            if not multiple_labels[0].lstrip('-').isdigit():
+                label = -1 if multiple_labels[0] == 'other' else int(inv_symbol_dict[multiple_labels[0]])
+            else:
+                label = int(multiple_labels[0])
+        except KeyError:
+            badCharts[chart] = True
+            continue
         # ignore charts with bad images
         if label not in symbol_dict:  # ignore unsupported chart types
             badCharts[chart] = True
