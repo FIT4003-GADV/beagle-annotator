@@ -12,9 +12,10 @@ from utility import *
 # Extracts features from svg file, populates the feature dictionary
 # based on a precedence ordering, and returns the feature dictionary
 
-def extract(filename):
+def extract(filename, svg_soup=None):
     add_rect = False
-    soup = BeautifulSoup(open(filename, 'r').read(),"html.parser")
+    # Use the already-read svg_soup if passed in, else read and construct from the provided file.
+    soup = svg_soup if svg_soup else BeautifulSoup(open(filename, 'r').read(), "html.parser")
     if len(soup.prettify()) == 0:
         return "Empty File"
     feature_dict = {
